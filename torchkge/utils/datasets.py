@@ -151,7 +151,6 @@ def load_fb15k237(data_home=None):
 
     return kg.split_kg(sizes=(len(df1), len(df2), len(df3)))
 
-
 def load_wn18(data_home=None):
     """Load WN18 dataset.
 

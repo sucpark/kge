@@ -92,14 +92,16 @@ class KnowledgeGraph(Dataset):
             self.ent2ix = get_dictionaries(df, ent=True)
         else:
             self.ent2ix = ent2ix
+        self.ix2ent = {v: k for k, v in self.ent2ix.items()}
 
         if rel2ix is None:
             self.rel2ix = get_dictionaries(df, ent=False)
         else:
             self.rel2ix = rel2ix
+        self.ix2rel = {v: k for k, v in self.rel2ix.items()}
 
-        self.n_ent = len(self.ent2ix) # max(self.ent2ix.values()) + 1
-        self.n_rel = len(self.rel2ix) # max(self.rel2ix.values()) + 1
+        self.n_ent = len(self.ent2ix)   # max(self.ent2ix.values()) + 1
+        self.n_rel = len(self.rel2ix)   # max(self.rel2ix.values()) + 1
 
         if df is not None:
             # build kg from a pandas dataframe

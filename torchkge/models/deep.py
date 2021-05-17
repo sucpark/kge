@@ -5,6 +5,7 @@ Copyright TorchKGE developers
 """
 
 from torch import nn, cat
+from torch.nn.functional import normalize
 
 from ..models.interfaces import Model
 from ..utils import init_embedding
@@ -82,7 +83,13 @@ class ConvKBModel(Model):
         the end of training as well.
 
         """
-        raise NotImplementedError
+
+        """ Add normalization"""
+        self.ent_emb.weight.data = normalize(self.ent_emb.weight.data,
+                                             p=2, dim=1)
+        self.rel_emb.weight.data = normalize(self.rel_emb.weight.data,
+                                             p=2, dim=1)
+        # raise NotImplementedError
 
     def get_embeddings(self):
         """Return the embeddings of entities and relations.
