@@ -43,8 +43,7 @@ def load_fb13(data_home=None):
     data_path = data_home + '/FB13'
     if not exists(data_path):
         makedirs(data_path, exist_ok=True)
-        urlretrieve("https://graphs.telecom-paristech.fr/data/torchkge/kgs/FB13.zip",
-                    data_home + '/FB13.zip')
+        urlretrieve("https://graphs.telecom-paristech.fr/data/torchkge/kgs/FB13.zip", data_home + '/FB13.zip')
         with zipfile.ZipFile(data_home + '/FB13.zip', 'r') as zip_ref:
             zip_ref.extractall(data_home)
         remove(data_home + '/FB13.zip')
@@ -150,7 +149,6 @@ def load_fb15k237(data_home=None):
     kg = KnowledgeGraph(df)
 
     return kg.split_kg(sizes=(len(df1), len(df2), len(df3)))
-
 
 def load_wn18(data_home=None):
     """Load WN18 dataset.
@@ -314,7 +312,7 @@ def load_wikidatasets(which, limit_=0, data_home=None):
 
         with tarfile.open(data_home + '/{}.tar.gz'.format(which), 'r') as tf:
             tf.extractall(data_home)
-        remove(data_home + '/{}.tar.gz'.format(which))
+        # remove(data_home + '/{}.tar.gz'.format(which))
 
     df = read_csv(data_path + '/edges.tsv', sep='\t',
                   names=['from', 'to', 'rel'], skiprows=1)
