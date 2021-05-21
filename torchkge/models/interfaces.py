@@ -165,7 +165,7 @@ class Model(Module):
         """
         raise NotImplementedError
 
-    def lp_compute_ranks(self, e_emb, candidates, r, e_idx, r_idx, true_idx,
+    def lp_compute_ranks(self, e_emb, candidates, r_emb, e_idx, r_idx, true_idx,
                          dictionary, heads=1):
         """Link prediction evaluation helper function. Compute the ranks and
         the filtered ranks of true entities when doing link prediction. Note
@@ -214,15 +214,14 @@ class Model(Module):
         b_size = r_idx.shape[0]
 
         if heads == 1:
-            scores = self.lp_scoring_function(e_emb, candidates, r)
+            scores = self.lp_scoring_function(e_emb, candidates, r_emb)
         else:
-            scores = self.lp_scoring_function(candidates, e_emb, r)
+            scores = self.lp_scoring_function(candidates, e_emb, r_emb)
 
         # filter out the true negative samples by assigning - inf score.
         filt_scores = scores.clone()
         for i in range(b_size):
-            true_targets = get_true_targets(dictionary, e_idx, r_idx,
-                                            true_idx, i)
+            true_targets = get_true_targets(dictionary, e_idx, r_idx, true_idx, i)
             if true_targets is None:
                 continue
             filt_scores[i][true_targets] = - float('Inf')
@@ -266,17 +265,15 @@ class Model(Module):
             sorted by decreasing order of scoring function.
 
         """
-        h_emb, t_emb, candidates, r = self.lp_prep_cands(h_idx, t_idx, r_idx)
+        h_emb, t_emb, candidates, r_emb = self.lp_prep_cands(h_idx, t_idx, r_idx)
 
         rank_true_tails, filt_rank_true_tails = self.lp_compute_ranks(
-            h_emb, candidates, r, h_idx, r_idx, t_idx, kg.dict_of_tails,
-            heads=1)
-        rank_true_heads, filt_rank_true_heads = self.lp_compute_ranks(
-            t_emb, candidates, r, t_idx, r_idx, h_idx, kg.dict_of_heads,
-            heads=-1)
+            h_emb, candidates, r_emb, h_idx, r_idx, t_idx, kg.dict_of_tails, heads=1)
 
-        return (rank_true_tails, filt_rank_true_tails,
-                rank_true_heads, filt_rank_true_heads)
+        rank_true_heads, filt_rank_true_heads = self.lp_compute_ranks(
+            t_emb, candidates, r_emb, t_idx, r_idx, h_idx, kg.dict_of_heads, heads=-1)
+
+        return rank_true_tails, filt_rank_true_tails, rank_true_heads, filt_rank_true_heads
 
 
 class TranslationModel(Model):

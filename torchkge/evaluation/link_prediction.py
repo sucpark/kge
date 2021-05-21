@@ -84,8 +84,7 @@ class LinkPredictionEvaluator(object):
         use_cuda = next(self.model.parameters()).is_cuda
 
         if use_cuda:
-            dataloader = DataLoader(self.kg, batch_size=b_size,
-                                    use_cuda='batch')
+            dataloader = DataLoader(self.kg, batch_size=b_size, use_cuda='batch')
             self.rank_true_heads = self.rank_true_heads.cuda()
             self.rank_true_tails = self.rank_true_tails.cuda()
             self.filt_rank_true_heads = self.filt_rank_true_heads.cuda()

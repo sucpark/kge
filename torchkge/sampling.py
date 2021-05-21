@@ -267,7 +267,7 @@ class BernoulliNegativeSampler(NegativeSampler):
         bern_probs = get_bernoulli_probs(self.kg)
 
         tmp = []
-        for i in range(self.kg.n_rel):
+        for i in range(self.kg.n_rel):    # train 에 모든 relation이 커버 안될수도 있다.
             if i in bern_probs.keys():
                 tmp.append(bern_probs[i])
             else:

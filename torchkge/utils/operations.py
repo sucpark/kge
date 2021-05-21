@@ -99,7 +99,8 @@ def get_tph(t):
     df = DataFrame(t.numpy(), columns=['from', 'to', 'rel'])
     df = df.groupby(['from', 'rel']).count().groupby('rel').mean()
     df.reset_index(inplace=True)
-    return {df.loc[i].values[0]: df.loc[i].values[1] for i in df.index}
+    return {i: v for i, v in df.values}
+    # return {df.loc[i].values[0]: df.loc[i].values[1] for i in df.index}
 
 
 def get_hpt(t):
@@ -117,7 +118,8 @@ def get_hpt(t):
     df = DataFrame(t.numpy(), columns=['from', 'to', 'rel'])
     df = df.groupby(['rel', 'to']).count().groupby('rel').mean()
     df.reset_index(inplace=True)
-    return {df.loc[i].values[0]: df.loc[i].values[1] for i in df.index}
+    return {i: v for i, v in df.values}
+    # return {df.loc[i].values[0]: df.loc[i].values[1] for i in df.index}
 
 
 def get_bernoulli_probs(kg):
