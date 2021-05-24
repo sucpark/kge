@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/KG_Visualization.iml" filepath="$PROJECT_DIR$/.idea/KG_Visualization.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/kge.iml" filepath="$PROJECT_DIR$/.idea/kge.iml" />
     </modules>
   </component>
 </project>
