@@ -146,7 +146,11 @@ def get_bernoulli_probs(kg):
 
     assert hpt.keys() == tph.keys()
 
-    for k in tph.keys():
-        tph[k] = tph[k] / (tph[k] + hpt[k])
+    # for k in tph.keys():
+    #     tph[k] = tph[k] / (tph[k] + hpt[k])
+    # return tph
 
-    return tph
+    bern_prob = [0.5]*kg.n_rel
+    for r in tph.keys():
+        bern_prob[int(r)] = tph[r] / (tph[r] + hpt[r])
+    return bern_prob

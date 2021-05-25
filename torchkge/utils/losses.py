@@ -40,8 +40,7 @@ class MarginLoss(Module):
             :math:`f(h,r,t)` is the score of a true fact and
             :math:`f(h',r',t')` is the score of the associated negative fact.
         """
-        return self.loss(positive_triplets, negative_triplets,
-                         target=ones_like(positive_triplets))
+        return self.loss(positive_triplets, negative_triplets, target=ones_like(positive_triplets))
 
 
 class LogisticLoss(Module):

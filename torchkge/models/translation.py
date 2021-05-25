@@ -76,8 +76,8 @@ class TransEModel(TranslationModel):
         on the API.
 
         """
-        h = normalize(self.ent_emb(h_idx), p=2, dim=1)
-        t = normalize(self.ent_emb(t_idx), p=2, dim=1)
+        h = normalize(self.ent_emb(h_idx), p=2, dim=1)   # layer normalization
+        t = normalize(self.ent_emb(t_idx), p=2, dim=1)   # if dim=0, batch normalization
         r = self.rel_emb(r_idx)
 
         return - self.dissimilarity(h + r, t)

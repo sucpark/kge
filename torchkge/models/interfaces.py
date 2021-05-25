@@ -301,8 +301,7 @@ class TranslationModel(Model):
     def __init__(self, n_entities, n_relations, dissimilarity_type):
         super().__init__(n_entities, n_relations)
 
-        assert dissimilarity_type in ['L1', 'L2', 'torus_L1', 'torus_L2',
-                                      'torus_eL2']
+        assert dissimilarity_type in ['L1', 'L2', 'torus_L1', 'torus_L2', 'torus_eL2']
 
         if dissimilarity_type == 'L1':
             self.dissimilarity = l1_dissimilarity

@@ -265,15 +265,16 @@ class BernoulliNegativeSampler(NegativeSampler):
         TransH original paper by Wang et al. (2014).
         """
         bern_probs = get_bernoulli_probs(self.kg)
+        return tensor(bern_probs).float()
 
-        tmp = []
-        for i in range(self.kg.n_rel):    # train 에 모든 relation이 커버 안될수도 있다.
-            if i in bern_probs.keys():
-                tmp.append(bern_probs[i])
-            else:
-                tmp.append(0.5)
-
-        return tensor(tmp).float()
+        # tmp = []
+        # for i in range(self.kg.n_rel):    # train 에 모든 relation이 커버 안될수도 있다.
+        #     if i in bern_probs.keys():
+        #         tmp.append(bern_probs[i])
+        #     else:
+        #         tmp.append(0.5)
+        #
+        # return tensor(tmp).float()
 
     def corrupt_batch(self, heads, tails, relations, n_neg=None):
         """For each true triplet, produce a corrupted one different from any
@@ -315,8 +316,8 @@ class BernoulliNegativeSampler(NegativeSampler):
 
         # Randomly choose which samples will have head/tail corrupted
         mask = bernoulli(self.bern_probs[relations].repeat(n_neg)).double()
-        n_h_cor = int(mask.sum().item())
-        neg_heads[mask == 1] = randint(1, self.n_ent,
+        n_h_cor = int(mask.sum().item())  # the number head for corrupting
+        neg_heads[mask == 1] = randint(1, self.n_ent,                         # why randint starts from 1 not 0 ?
                                        (n_h_cor,),
                                        device=device)
         neg_tails[mask == 0] = randint(1, self.n_ent,
