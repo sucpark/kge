@@ -221,7 +221,7 @@ class Model(Module):
         # filter out the true negative samples by assigning - inf score.
         filt_scores = scores.clone()
         for i in range(b_size):
-            true_targets = get_true_targets(dictionary, e_idx, r_idx, true_idx, i)
+            true_targets = get_true_targets(dictionary, e_idx, r_idx, true_idx, i)  # 존재하는 triplet
             if true_targets is None:
                 continue
             filt_scores[i][true_targets] = - float('Inf')
