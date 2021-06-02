@@ -100,8 +100,8 @@ class KnowledgeGraph(Dataset):
             self.rel2ix = rel2ix
         self.ix2rel = {v: k for k, v in self.rel2ix.items()}
 
-        self.n_ent = len(self.ent2ix)   # max(self.ent2ix.values()) + 1
-        self.n_rel = len(self.rel2ix)   # max(self.rel2ix.values()) + 1
+        self.n_ent = max(self.ent2ix.values()) + 1
+        self.n_rel = max(self.rel2ix.values()) + 1
 
         if df is not None:
             # build kg from a pandas dataframe

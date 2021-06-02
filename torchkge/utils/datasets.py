@@ -314,8 +314,27 @@ def load_wikidatasets(which, limit_=0, data_home=None):
             tf.extractall(data_home)
         # remove(data_home + '/{}.tar.gz'.format(which))
 
-    df = read_csv(data_path + '/edges.tsv', sep='\t',
-                  names=['from', 'to', 'rel'], skiprows=1)
+    # add entity2idx, relation2idx
+    df = read_csv(data_path + '/edges.tsv', sep='\t', names=['from', 'to', 'rel'], skiprows=[0])
+    entities = read_csv(data_path + '/entities.tsv', sep='\t', names=['id', 'wid', 'label'], skiprows=[0])
+    relations = read_csv(data_path + '/relations.tsv', sep='\t', names=['id', 'wid', 'label'], skiprows=[0])
+
+    ix2ent = {i: e for i, e in zip(entities['id'], entities['label'])}
+    ix2rel = {i: r for i, r in zip(relations['id'], relations['label'])}
+
+    for i in range(len(df)):
+        h, t, r = df.loc[i]['from'], df.loc[i]['to'], df.loc[i]['rel']
+        df.loc[i] = [ix2ent[h], ix2ent[t], ix2rel[r]]
+
+    entities.drop_duplicates('label', inplace=True)
+    relations.drop_duplicates('label', inplace=True)
+
+    ent2ix = {e: i for i, e in enumerate(entities['label'])}
+    rel2ix = {r: i for i, r in enumerate(relations['label'])}
+
+    # for i in range(len(df)):
+    #     h, t, r = df.loc[i]['from'], df.loc[i]['to'], df.loc[i]['rel']
+    #     df.loc[i] = [ent2ix[h], ent2ix[t], rel2ix[r]]
 
     if limit_ > 0:
         a = df.groupby('from').count()['rel']
@@ -332,9 +351,9 @@ def load_wikidatasets(which, limit_=0, data_home=None):
         tmp = tmp.loc[tmp['rel'] >= limit_]
         df_bis = df.loc[df['from'].isin(tmp['to']) | df['to'].isin(tmp['to'])]
 
-        kg = KnowledgeGraph(df_bis)
+        kg = KnowledgeGraph(df=df_bis, ent2ix=ent2ix, rel2ix=rel2ix)
     else:
-        kg = KnowledgeGraph(df)
+        kg = KnowledgeGraph(df=df, ent2ix=ent2ix, rel2ix=rel2ix)
 
     return kg
 
