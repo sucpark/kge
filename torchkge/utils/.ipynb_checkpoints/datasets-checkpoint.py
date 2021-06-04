@@ -10,6 +10,7 @@ sklearn.datasets.base.py code.
 import shutil
 import tarfile
 import zipfile
+import pickle
 
 from os import makedirs, remove
 from os.path import exists
@@ -43,8 +44,7 @@ def load_fb13(data_home=None):
     data_path = data_home + '/FB13'
     if not exists(data_path):
         makedirs(data_path, exist_ok=True)
-        urlretrieve("https://graphs.telecom-paristech.fr/data/torchkge/kgs/FB13.zip",
-                    data_home + '/FB13.zip')
+        urlretrieve("https://graphs.telecom-paristech.fr/data/torchkge/kgs/FB13.zip", data_home + '/FB13.zip')
         with zipfile.ZipFile(data_home + '/FB13.zip', 'r') as zip_ref:
             zip_ref.extractall(data_home)
         remove(data_home + '/FB13.zip')
@@ -150,7 +150,6 @@ def load_fb15k237(data_home=None):
     kg = KnowledgeGraph(df)
 
     return kg.split_kg(sizes=(len(df1), len(df2), len(df3)))
-
 
 def load_wn18(data_home=None):
     """Load WN18 dataset.
@@ -315,9 +314,38 @@ def load_wikidatasets(which, limit_=0, data_home=None):
         with tarfile.open(data_home + '/{}.tar.gz'.format(which), 'r') as tf:
             tf.extractall(data_home)
         remove(data_home + '/{}.tar.gz'.format(which))
+    
+    previous_data_load_condition = (
+        exists(data_path + '/' + 'WikiData_train.pkl') and
+        exists(data_path + '/' + 'WikiData_valid.pkl') and 
+        exists(data_path + '/' + 'WikiData_test.pkl'))
+    
+    if previous_data_load_condition:
+        with open(data_path + '/' + 'WikiData_train.pkl', mode='rb') as io:
+            kg_train = pickle.load(io)
+        with open(data_path + '/' + 'WikiData_valid.pkl', mode='rb') as io:
+            kg_valid = pickle.load(io)
+        with open(data_path + '/' + 'WikiData_test.pkl', mode='rb') as io:
+            kg_test = pickle.load(io)
+        return kg_train, kg_valid, kg_test
 
-    df = read_csv(data_path + '/edges.tsv', sep='\t',
-                  names=['from', 'to', 'rel'], skiprows=1)
+    # add entity2idx, relation2idx
+    df = read_csv(data_path + '/edges.tsv', sep='\t', names=['from', 'to', 'rel'], skiprows=[0])
+    entities = read_csv(data_path + '/entities.tsv', sep='\t', names=['id', 'wid', 'label'], skiprows=[0])
+    relations = read_csv(data_path + '/relations.tsv', sep='\t', names=['id', 'wid', 'label'], skiprows=[0])
+
+    ix2ent = {i: e for i, e in zip(entities['id'], entities['label'])}
+    ix2rel = {i: r for i, r in zip(relations['id'], relations['label'])}
+
+    for i in range(len(df)):
+        h, t, r = df.loc[i]['from'], df.loc[i]['to'], df.loc[i]['rel']
+        df.loc[i] = [ix2ent[h], ix2ent[t], ix2rel[r]]
+
+    entities.drop_duplicates('label', inplace=True)
+    relations.drop_duplicates('label', inplace=True)
+
+    ent2ix = {e: i for i, e in enumerate(entities['label'])}
+    rel2ix = {r: i for i, r in enumerate(relations['label'])}
 
     if limit_ > 0:
         a = df.groupby('from').count()['rel']
@@ -334,11 +362,18 @@ def load_wikidatasets(which, limit_=0, data_home=None):
         tmp = tmp.loc[tmp['rel'] >= limit_]
         df_bis = df.loc[df['from'].isin(tmp['to']) | df['to'].isin(tmp['to'])]
 
-        kg = KnowledgeGraph(df_bis)
+        kg = KnowledgeGraph(df=df_bis, ent2ix=ent2ix, rel2ix=rel2ix)
     else:
-        kg = KnowledgeGraph(df)
-
-    return kg
+        kg = KnowledgeGraph(df=df, ent2ix=ent2ix, rel2ix=rel2ix)
+    
+    kg_train, kg_valid, kg_test = kg.split_kg(share=0.8, validation=True)
+    with open(data_path + '/' + 'WikiData_train.pkl', mode='wb') as io:
+            pickle.dump(kg_train, io)
+    with open(data_path + '/' + 'WikiData_valid.pkl', mode='wb') as io:
+            pickle.dump(kg_valid, io)
+    with open(data_path + '/' + 'WikiData_test.pkl', mode='wb') as io:
+            pickle.dump(kg_test, io)
+    return kg_train, kg_valid, kg_test
 
 
 def load_wikidata_vitals(level=5, data_home=None):
