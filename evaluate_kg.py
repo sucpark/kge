@@ -16,24 +16,27 @@ parser.add_argument('--model', default='TransR')
 
 parser_for_kg_wiki = parser.add_argument_group(title='wiki')
 parser_for_kg_wiki.add_argument('--which', default='companies')
-parser_for_kg_wiki.add_argument('--limit', default=0)
 
 parser_for_evaluating = parser.add_argument_group(title='Evaluating')
 parser_for_evaluating.add_argument('--batch_size', default=64, help='Batch size for evaluating')
-parser_for_evaluating.add_argument('--ent_dim', default=20, type=int, help='Embedding dimension for Entity')
-parser_for_evaluating.add_argument('--rel_dim', default=20, type=int, help='Embedding dimension for Relation')
-parser_for_evaluating.add_argument('--margin', default=0.5, type=float, help='Margin for margin ranking loss')
 
 if __name__ == '__main__':
     args = parser.parse_args()
     restore_dir = Path(args.restore_dir)
     restore_dir = restore_dir / args.data / args.which / args.model
+    summary_manager = SummaryManager(restore_dir)
+    summary_manager.load(f'summary_{args.model}.json')
+    previous_summary = summary_manager.summary
+    ent_dim = previous_summary['Experiment Summary']['entity dimension']
+    rel_dim = previous_summary['Experiment Summary']['relation dimension']
+    limit = previous_summary['Experiment Summary']['limit']
+    margin = previous_summary['Experiment Summary']['margin']
     
     # load data
     assert args.data in ['wikidatasets', 'fb15k'], "Invalid knowledge graph dataset"
     if args.data == 'wikidatasets':
         _, kg_valid, kg_test = torchkge_ds.load_wikidatasets(which=args.which, 
-                                                             limit_=args.limit, 
+                                                             limit_=limit,
                                                              data_home=args.data_dir)
     elif args.data == 'fb15k':
         _, kg_valid, kg_test = torchkge_ds.load_fb15k(data_home=args.data_dir)
@@ -41,16 +44,16 @@ if __name__ == '__main__':
     # restore model
     assert args.model in ['TransE', 'TransR', 'DistMult'], "Invalid Knowledge Graph Embedding Model"
     if args.model == 'TransE':
-        model = torchkge.models.TransEModel(args.ent_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
+        model = torchkge.models.TransEModel(ent_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
     elif args.model == 'DistMult':
-        model = torchkge.models.DistMultModel(args.ent_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
+        model = torchkge.models.DistMultModel(ent_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
     elif args.model == 'TransR':
-        model = torchkge.models.TransRModel(args.ent_dim, args.rel_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
+        model = torchkge.models.TransRModel(ent_dim, rel_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
         
     checkpoint_manager = CheckpointManager(restore_dir)
     ckpt = checkpoint_manager.load_checkpoint(f'best_{args.model}.tar')
     model.load_state_dict(ckpt['model_state_dict'])
-    criterion = MarginLoss(args.margin)
+    criterion = MarginLoss(margin)
 
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -70,14 +73,13 @@ if __name__ == '__main__':
             loss = criterion(pos, neg)
             test_loss += loss.item()
     test_loss /= (step+1)
-    summary_manager = SummaryManager(restore_dir)
-    summary_manager.load(f'summary_{args.model}.json')
-    
-    summary = {'test loss': round(test_loss, 4)}
-    summary = dict(**summary)
-    previous_summary = summary_manager.summary['Training Summary']
-    previous_summary['test loss'] = round(test_loss, 4)
-    summary = {'Training Summary': previous_summary}
+
+    # summary = {'test loss': round(test_loss, 4)}
+    # summary = dict(**summary)
+    training_summary = previous_summary['Training Summary']
+    training_summary['test loss'] = round(test_loss, 4)
+    training_summary = dict(**training_summary)
+    summary = {'Training Summary': training_summary}
     summary_manager.update(summary)
     
     # Link Prediction 
@@ -96,12 +98,3 @@ if __name__ == '__main__':
     summary_manager.update(tc_summary)
 
     summary_manager.save(f'summary_{args.model}.json')
-
-    
-    
-    
-    
-    
-    
-    
-    

@@ -35,10 +35,10 @@ if __name__ == '__main__':
     model_dir = Path(args.model_dir)
     save_dir = model_dir / args.data / args.which / args.model
     
-    experiment_summary = {'data': args.data, 'model': args.model,
-                          '# of epochs':args.epochs, 'batch size': args.batch_size, 
+    experiment_summary = {'data': args.data, 'which': args.which, 'limit': args.limit,
+                          'model': args.model, '# of epochs': args.epochs, 'batch size': args.batch_size,
                           'learning rate': args.learning_rate, 'margin': args.margin, 
-                          'entity dimension':args.ent_dim, 'relation dimension': args.rel_dim}
+                          'entity dimension': args.ent_dim, 'relation dimension': args.rel_dim}
     experiment_summary = dict(**experiment_summary)
     experiment_summary = {'Experiment Summary': experiment_summary}
     
