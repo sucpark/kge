@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser(description='Training knowledge graph using development knowledge base')
 parser.add_argument('--data_dir', default='data', help='Directory containing data')
 parser.add_argument('--model_dir', default='experiment', help='Directory to save the expriment results')
-parser.add_argument('--kg', default='wikidatasets')
+parser.add_argument('--data', default='wikidatasets')
 parser.add_argument('--model', default='TransR')
 
 parser_for_kg_wiki = parser.add_argument_group(title='wiki')
@@ -33,14 +33,21 @@ parser_for_training.add_argument('--summary_step', default=50, type=int, help='S
 if __name__ == '__main__':
     args = parser.parse_args()
     model_dir = Path(args.model_dir)
-    save_dir = model_dir / args.kg / args.which / args.model
+    save_dir = model_dir / args.data / args.which / args.model
     
-    assert args.kg in ['wikidatasets', 'fb15k'], "Invalid knowledge graph dataset"
-    if args.kg == 'wikidatasets':
+    experiment_summary = {'data': args.data, 'model': args.model,
+                          '# of epochs':args.epochs, 'batch size': args.batch_size, 
+                          'learning rate': args.learning_rate, 'margin': args.margin, 
+                          'entity dimension':args.ent_dim, 'relation dimension': args.rel_dim}
+    experiment_summary = dict(**experiment_summary)
+    experiment_summary = {'Experiment Summary': experiment_summary}
+    
+    assert args.data in ['wikidatasets', 'fb15k'], "Invalid knowledge graph dataset"
+    if args.data == 'wikidatasets':
         kg_train, kg_valid, _ = torchkge_ds.load_wikidatasets(which=args.which,
                                                               limit_=args.limit,
                                                               data_home=args.data_dir)
-    elif args.kg == 'fb15k':
+    elif args.data == 'fb15k':
         kg_train, kg_valid, _ = torchkge_ds.load_fb15k(data_home=args.data_dir)
 
     assert args.model in ['TransE', 'TransR', 'DistMult'], "Invalid Knowledge Graph Embedding Model"
@@ -61,6 +68,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(save_dir / f'runs_{args.model}')
     checkpoint_manager = CheckpointManager(save_dir)
     summary_manager = SummaryManager(save_dir)
+    summary_manager.update(experiment_summary)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
     sampler = BernoulliNegativeSampler(kg_train)
@@ -105,7 +113,9 @@ if __name__ == '__main__':
             state = {'epoch': epoch, 
                      'model_state_dict': model.state_dict(), 
                      'optimizer': optimizer.state_dict()}
-            summary = {'training loss': tr_loss, 'validation loss': val_loss}
+            summary = {'training loss': round(tr_loss, 4), 'validation loss': round(val_loss, 4)}
+            summary = dict(**summary)
+            summary = {'Training Summary': summary}
             
             summary_manager.update(summary)
             summary_manager.save(f'summary_{args.model}.json')

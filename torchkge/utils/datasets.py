@@ -10,6 +10,7 @@ sklearn.datasets.base.py code.
 import shutil
 import tarfile
 import zipfile
+import pickle
 
 from os import makedirs, remove
 from os.path import exists
@@ -312,7 +313,21 @@ def load_wikidatasets(which, limit_=0, data_home=None):
 
         with tarfile.open(data_home + '/{}.tar.gz'.format(which), 'r') as tf:
             tf.extractall(data_home)
-        # remove(data_home + '/{}.tar.gz'.format(which))
+        remove(data_home + '/{}.tar.gz'.format(which))
+    
+    previous_data_load_condition = (
+        exists(data_path + '/' + 'WikiData_train.pkl') and
+        exists(data_path + '/' + 'WikiData_valid.pkl') and 
+        exists(data_path + '/' + 'WikiData_test.pkl'))
+    
+    if previous_data_load_condition:
+        with open(data_path + '/' + 'WikiData_train.pkl', mode='rb') as io:
+            kg_train = pickle.load(io)
+        with open(data_path + '/' + 'WikiData_valid.pkl', mode='rb') as io:
+            kg_valid = pickle.load(io)
+        with open(data_path + '/' + 'WikiData_test.pkl', mode='rb') as io:
+            kg_test = pickle.load(io)
+        return kg_train, kg_valid, kg_test
 
     # add entity2idx, relation2idx
     df = read_csv(data_path + '/edges.tsv', sep='\t', names=['from', 'to', 'rel'], skiprows=[0])
@@ -332,10 +347,6 @@ def load_wikidatasets(which, limit_=0, data_home=None):
     ent2ix = {e: i for i, e in enumerate(entities['label'])}
     rel2ix = {r: i for i, r in enumerate(relations['label'])}
 
-    # for i in range(len(df)):
-    #     h, t, r = df.loc[i]['from'], df.loc[i]['to'], df.loc[i]['rel']
-    #     df.loc[i] = [ent2ix[h], ent2ix[t], rel2ix[r]]
-
     if limit_ > 0:
         a = df.groupby('from').count()['rel']
         b = df.groupby('to').count()['rel']
@@ -354,8 +365,15 @@ def load_wikidatasets(which, limit_=0, data_home=None):
         kg = KnowledgeGraph(df=df_bis, ent2ix=ent2ix, rel2ix=rel2ix)
     else:
         kg = KnowledgeGraph(df=df, ent2ix=ent2ix, rel2ix=rel2ix)
-
-    return kg
+    
+    kg_train, kg_valid, kg_test = kg.split_kg(share=0.8, validation=True)
+    with open(data_path + '/' + 'WikiData_train.pkl', mode='wb') as io:
+            pickle.dump(kg_train, io)
+    with open(data_path + '/' + 'WikiData_valid.pkl', mode='wb') as io:
+            pickle.dump(kg_valid, io)
+    with open(data_path + '/' + 'WikiData_test.pkl', mode='wb') as io:
+            pickle.dump(kg_test, io)
+    return kg_train, kg_valid, kg_test
 
 
 def load_wikidata_vitals(level=5, data_home=None):
