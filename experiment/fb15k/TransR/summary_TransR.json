@@ -1,0 +1,34 @@
+{
+    "Experiment Summary": {
+        "data": "fb15k",
+        "which": "companies",
+        "limit": 0,
+        "model": "TransR",
+        "# of epochs": 10,
+        "batch size": 256,
+        "learning rate": 0.0004,
+        "margin": 0.5,
+        "entity dimension": 20,
+        "relation dimension": 20
+    },
+    "Training Summary": {
+        "training loss": 9.7385,
+        "validation loss": 8.1563,
+        "test loss": 4.6692
+    },
+    "Link Prediction": {
+        "Normal": {
+            "Hit@10": 0.1891,
+            "Mean Rank": 1272,
+            "MRR": 0.1036
+        },
+        "Filtered": {
+            "Hit@10": 0.2222,
+            "Mean Rank": 1182,
+            "MRR": 0.1323
+        }
+    },
+    "Triplet Classification": {
+        "Accuracy": 0.5022
+    }
+}

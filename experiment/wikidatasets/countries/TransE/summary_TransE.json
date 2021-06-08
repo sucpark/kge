@@ -1,0 +1,34 @@
+{
+    "Experiment Summary": {
+        "data": "wikidatasets",
+        "which": "countries",
+        "limit": 0,
+        "model": "TransE",
+        "# of epochs": 10,
+        "batch size": 256,
+        "learning rate": 0.0004,
+        "margin": 0.5,
+        "entity dimension": 20,
+        "relation dimension": 20
+    },
+    "Training Summary": {
+        "training loss": 143.4245,
+        "validation loss": 142.4218,
+        "test loss": 35.6836
+    },
+    "Link Prediction": {
+        "Normal": {
+            "Hit@10": 0.0349,
+            "Mean Rank": 13238,
+            "MRR": 0.0215
+        },
+        "Filtered": {
+            "Hit@10": 0.0349,
+            "Mean Rank": 13218,
+            "MRR": 0.0215
+        }
+    },
+    "Triplet Classification": {
+        "Accuracy": 0.5046
+    }
+}
