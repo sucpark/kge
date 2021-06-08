@@ -42,7 +42,6 @@ if __name__ == '__main__':
     experiment_summary = {'Experiment Summary': experiment_summary}
     
     assert args.data in ['wikidatasets', 'fb15k'], "Invalid knowledge graph dataset"
-
     if args.data == 'wikidatasets':
         data_dir = data_dir / args.which
         save_dir = save_dir / args.which

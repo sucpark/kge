@@ -6,7 +6,9 @@ Based on torchkge, develop the pipeline of knowledge graph embedding
 
 ### Data Overview
 Freebase
+
 Wikidatasets
+
 Yago
   
 ### File Description

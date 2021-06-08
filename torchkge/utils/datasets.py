@@ -7,10 +7,8 @@ This module's code is freely adapted from Scikit-Learn's
 sklearn.datasets.base.py code.
 """
 
-import shutil
 import tarfile
 import zipfile
-import pickle
 
 from os import makedirs, remove
 from os.path import exists
