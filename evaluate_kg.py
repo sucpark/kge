@@ -1,9 +1,9 @@
+import pickle
 import argparse
 import torch
 from pathlib import Path
 from torchkge.utils import MarginLoss, DataLoader
 import torchkge.models
-import torchkge.utils.datasets as torchkge_ds
 from torchkge.sampling import BernoulliNegativeSampler
 from torchkge.evaluation import LinkPredictionEvaluator, TripletClassificationEvaluator
 from utils import CheckpointManager, SummaryManager
@@ -22,8 +22,15 @@ parser_for_evaluating.add_argument('--batch_size', default=64, help='Batch size 
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    restore_dir = Path(args.restore_dir)
-    restore_dir = restore_dir / args.data / args.which / args.model
+    data_dir = Path(args.data_dir) / args.data
+    restore_dir = Path(args.restore_dir) / args.data
+
+    assert args.data in ['wikidatasets', 'fb15k'], "Invalid knowledge graph dataset"
+    if args.data == 'wikidatasets':
+        data_dir = data_dir / args.which
+        restore_dir = restore_dir / args.which
+    restore_dir = restore_dir / args.model
+
     summary_manager = SummaryManager(restore_dir)
     summary_manager.load(f'summary_{args.model}.json')
     previous_summary = summary_manager.summary
@@ -31,24 +38,20 @@ if __name__ == '__main__':
     rel_dim = previous_summary['Experiment Summary']['relation dimension']
     limit = previous_summary['Experiment Summary']['limit']
     margin = previous_summary['Experiment Summary']['margin']
-    
-    # load data
-    assert args.data in ['wikidatasets', 'fb15k'], "Invalid knowledge graph dataset"
-    if args.data == 'wikidatasets':
-        _, kg_valid, kg_test = torchkge_ds.load_wikidatasets(which=args.which, 
-                                                             limit_=limit,
-                                                             data_home=args.data_dir)
-    elif args.data == 'fb15k':
-        _, kg_valid, kg_test = torchkge_ds.load_fb15k(data_home=args.data_dir)
+
+    with open(data_dir / 'kg_test.pkl', mode='rb') as io:
+        kg_test = pickle.load(io)
+    with open(data_dir / 'kg_valid.pkl', mode='rb') as io:
+        kg_valid = pickle.load(io)
     
     # restore model
     assert args.model in ['TransE', 'TransR', 'DistMult'], "Invalid Knowledge Graph Embedding Model"
     if args.model == 'TransE':
         model = torchkge.models.TransEModel(ent_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
     elif args.model == 'DistMult':
-        model = torchkge.models.DistMultModel(ent_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
+        model = torchkge.models.DistMultModel(ent_dim, kg_test.n_ent, kg_test.n_rel)
     elif args.model == 'TransR':
-        model = torchkge.models.TransRModel(ent_dim, rel_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
+        model = torchkge.models.TransRModel(ent_dim, rel_dim, kg_test.n_ent, kg_test.n_rel)
         
     checkpoint_manager = CheckpointManager(restore_dir)
     ckpt = checkpoint_manager.load_checkpoint(f'best_{args.model}.tar')
@@ -74,8 +77,6 @@ if __name__ == '__main__':
             test_loss += loss.item()
     test_loss /= (step+1)
 
-    # summary = {'test loss': round(test_loss, 4)}
-    # summary = dict(**summary)
     training_summary = previous_summary['Training Summary']
     training_summary['test loss'] = round(test_loss, 4)
     training_summary = dict(**training_summary)

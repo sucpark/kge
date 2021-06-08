@@ -106,8 +106,8 @@ def load_fb15k(data_home=None):
                    sep='\t', header=None, names=['from', 'rel', 'to'])
     df = concat([df1, df2, df3])
     kg = KnowledgeGraph(df)
-
-    return kg.split_kg(sizes=(len(df1), len(df2), len(df3)))
+    
+    return kg
 
 
 def load_fb15k237(data_home=None):
@@ -150,6 +150,7 @@ def load_fb15k237(data_home=None):
     kg = KnowledgeGraph(df)
 
     return kg.split_kg(sizes=(len(df1), len(df2), len(df3)))
+
 
 def load_wn18(data_home=None):
     """Load WN18 dataset.
@@ -314,20 +315,6 @@ def load_wikidatasets(which, limit_=0, data_home=None):
         with tarfile.open(data_home + '/{}.tar.gz'.format(which), 'r') as tf:
             tf.extractall(data_home)
         remove(data_home + '/{}.tar.gz'.format(which))
-    
-    previous_data_load_condition = (
-        exists(data_path + '/' + 'WikiData_train.pkl') and
-        exists(data_path + '/' + 'WikiData_valid.pkl') and 
-        exists(data_path + '/' + 'WikiData_test.pkl'))
-    
-    if previous_data_load_condition:
-        with open(data_path + '/' + 'WikiData_train.pkl', mode='rb') as io:
-            kg_train = pickle.load(io)
-        with open(data_path + '/' + 'WikiData_valid.pkl', mode='rb') as io:
-            kg_valid = pickle.load(io)
-        with open(data_path + '/' + 'WikiData_test.pkl', mode='rb') as io:
-            kg_test = pickle.load(io)
-        return kg_train, kg_valid, kg_test
 
     # add entity2idx, relation2idx
     df = read_csv(data_path + '/edges.tsv', sep='\t', names=['from', 'to', 'rel'], skiprows=[0])
@@ -365,15 +352,8 @@ def load_wikidatasets(which, limit_=0, data_home=None):
         kg = KnowledgeGraph(df=df_bis, ent2ix=ent2ix, rel2ix=rel2ix)
     else:
         kg = KnowledgeGraph(df=df, ent2ix=ent2ix, rel2ix=rel2ix)
-    
-    kg_train, kg_valid, kg_test = kg.split_kg(share=0.8, validation=True)
-    with open(data_path + '/' + 'WikiData_train.pkl', mode='wb') as io:
-            pickle.dump(kg_train, io)
-    with open(data_path + '/' + 'WikiData_valid.pkl', mode='wb') as io:
-            pickle.dump(kg_valid, io)
-    with open(data_path + '/' + 'WikiData_test.pkl', mode='wb') as io:
-            pickle.dump(kg_test, io)
-    return kg_train, kg_valid, kg_test
+
+    return kg
 
 
 def load_wikidata_vitals(level=5, data_home=None):
