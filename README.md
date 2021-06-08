@@ -1,3 +1,3 @@
-# kge_visualization
+# kge
 
-### Update TorchKGE package for knowledge graph visualization
+### Based on torchkge, develop the pipeline of knowledge graph embedding
