@@ -1,8 +1,0 @@
-{
-    "triplet_count": 64217,
-    "entity_count": 411993,
-    "relation_count": 431,
-    "train_triplet_count": 55479,
-    "validation_triplet_count": 4357,
-    "test_triplet_count": 4381
-}

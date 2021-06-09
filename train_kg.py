@@ -2,7 +2,7 @@ import pickle
 import argparse
 import torch
 from pathlib import Path
-from tqdm.autonotebook import tqdm
+from tqdm import tqdm
 
 import torchkge.models
 from torchkge.sampling import BernoulliNegativeSampler
@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 parser = argparse.ArgumentParser(description='Training knowledge graph using development knowledge base')
 parser.add_argument('--data_dir', default='data', help='Directory containing data')
-parser.add_argument('--save_dir', default='experiment', help='Directory to save the expriment results')
+parser.add_argument('--save_dir', default='experiment', help='Directory to save the experiment results')
 parser.add_argument('--data', default='wikidatasets')
 parser.add_argument('--model', default='TransR')
 
@@ -22,7 +22,7 @@ parser_for_kg_wiki.add_argument('--limit', default=0)
 
 parser_for_training = parser.add_argument_group(title='Training')
 parser_for_training.add_argument('--epochs', default=10, type=int, help='Epochs for training')
-parser_for_training.add_argument('--batch_size', default=256, help='Batch size for training')
+parser_for_training.add_argument('--batch_size', default=256, type=int, help='Batch size for training')
 parser_for_training.add_argument('--learning_rate', default=0.0004, type=float, help='Learning rate for training')
 parser_for_training.add_argument('--ent_dim', default=20, type=int, help='Embedding dimension for Entity')
 parser_for_training.add_argument('--rel_dim', default=20, type=int, help='Embedding dimension for Relation')
@@ -61,12 +61,13 @@ if __name__ == '__main__':
         model = torchkge.models.TransRModel(args.ent_dim, args.rel_dim, kg_train.n_ent, kg_train.n_rel)
     
     criterion = MarginLoss(args.margin)
-    
-    if torch.cuda.is_available():
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
         torch.cuda.empty_cache()
-        model.cuda()
-        criterion.cuda()
-    
+    model.to(device)
+    criterion.to(device)
+
     writer = SummaryWriter(save_dir / f'runs_{args.model}')
     checkpoint_manager = CheckpointManager(save_dir)
     summary_manager = SummaryManager(save_dir)
@@ -74,17 +75,16 @@ if __name__ == '__main__':
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
     sampler = BernoulliNegativeSampler(kg_train)
-    tr_dl = DataLoader(kg_train, batch_size=args.batch_size, use_cuda='all')
-    val_dl = DataLoader(kg_train, batch_size=args.batch_size, use_cuda='all')
-    
+    tr_dl = DataLoader(kg_train, batch_size=args.batch_size)
+    val_dl = DataLoader(kg_train, batch_size=args.batch_size)
+
     best_val_loss = 1e+10
     for epoch in tqdm(range(args.epochs), desc='epochs'):
-        
         tr_loss = 0
         model.train()
         
         for step, batch in enumerate(tr_dl):
-            h, t, r = batch[0], batch[1], batch[2]
+            h, t, r = map(lambda elm: elm.to(device), batch)
             n_h, n_t = sampler.corrupt_batch(h, t, r)
             
             optimizer.zero_grad()
@@ -99,14 +99,14 @@ if __name__ == '__main__':
         model.eval()
         val_loss = 0
         for step, batch in enumerate(val_dl):
-            h, t, r = batch[0], batch[1], batch[2]
+            h, t, r = map(lambda elm: elm.to(device), batch)
             n_h, n_t = sampler.corrupt_batch(h, t, r)
             with torch.no_grad():
                 pos, neg = model(h, t, n_h, n_t, r)
                 loss = criterion(pos, neg)
                 val_loss += loss.item()
         val_loss /= (step+1)
-
+        writer.add_scalars('loss', {'train': tr_loss, 'val': val_loss}, epoch)
         if (epoch+1) % args.summary_step == 0:
             tqdm.write('Epoch {} | train loss: {:.5f}, valid loss: {:.5f}'.format(epoch+1, tr_loss, val_loss))
         model.normalize_parameters()

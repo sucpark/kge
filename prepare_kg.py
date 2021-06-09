@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='Training knowledge graph using dev
 parser.add_argument('--data_dir', default='raw_data', help='Directory containing raw data')
 parser.add_argument('--save_dir', default='data', help='Directory to save the refined kg')
 parser.add_argument('--data', default='wikidatasets')
-parser.add_argument('--share', default=0.8, help='The proportion of training triplets')
+parser.add_argument('--share', default=0.8, type=float, help='The proportion of training triplets')
 
 parser_for_kg_wiki = parser.add_argument_group(title='wiki')
 parser_for_kg_wiki.add_argument('--which', default='companies')

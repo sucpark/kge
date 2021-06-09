@@ -1,6 +1,7 @@
 import pickle
 import argparse
 import torch
+from tqdm import tqdm
 from pathlib import Path
 from torchkge.utils import MarginLoss, DataLoader
 import torchkge.models
@@ -10,7 +11,7 @@ from utils import CheckpointManager, SummaryManager
 
 parser = argparse.ArgumentParser(description="Evaluating knowledge graph embedding using development database")
 parser.add_argument('--data_dir', default='data', help='Directory containing data')
-parser.add_argument('--restore_dir', default='experiment', help='Directory to restore the expriment results')
+parser.add_argument('--restore_dir', default='experiment', help='Directory to restore the experiment results')
 parser.add_argument('--data', default='wikidatasets')
 parser.add_argument('--model', default='TransR')
 
@@ -18,7 +19,7 @@ parser_for_kg_wiki = parser.add_argument_group(title='wiki')
 parser_for_kg_wiki.add_argument('--which', default='companies')
 
 parser_for_evaluating = parser.add_argument_group(title='Evaluating')
-parser_for_evaluating.add_argument('--batch_size', default=64, help='Batch size for evaluating')
+parser_for_evaluating.add_argument('--batch_size', default=64, type=int, help='Batch size for evaluating')
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -58,18 +59,19 @@ if __name__ == '__main__':
     model.load_state_dict(ckpt['model_state_dict'])
     criterion = MarginLoss(margin)
 
-    if torch.cuda.is_available():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
         torch.cuda.empty_cache()
-        model.cuda()
-        criterion.cuda()
+    model.to(device)
+    criterion.to(device)
 
     sampler = BernoulliNegativeSampler(kg_test)
-    test_dl = DataLoader(kg_test, batch_size=args.batch_size, use_cuda='all')
+    test_dl = DataLoader(kg_test, batch_size=args.batch_size)
 
     model.eval()
     test_loss = 0
-    for step, batch in enumerate(test_dl):
-        h, t, r = batch[0], batch[1], batch[2]
+    for step, batch in tqdm(enumerate(test_dl), desc='steps', total=len(test_dl)):
+        h, t, r = map(lambda elm: elm.to(device), batch)
         n_h, n_t = sampler.corrupt_batch(h, t, r)
         with torch.no_grad():
             pos, neg = model(h, t, n_h, n_t, r)
