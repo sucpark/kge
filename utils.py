@@ -135,3 +135,4 @@ class SummaryManager:
     @property
     def summary(self):
         return self._summary
+
