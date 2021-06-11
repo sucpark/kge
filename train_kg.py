@@ -7,7 +7,7 @@ from tqdm import tqdm
 import torchkge.models
 from torchkge.sampling import BernoulliNegativeSampler
 from torchkge.utils import MarginLoss, DataLoader
-from utils import CheckpointManager, SummaryManager
+from utils import CheckpointManager, SummaryManager, DataParallel
 from torch.utils.tensorboard import SummaryWriter
 
 parser = argparse.ArgumentParser(description='Training knowledge graph using development knowledge base')
@@ -63,8 +63,14 @@ if __name__ == '__main__':
     criterion = MarginLoss(args.margin)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     if device.type == 'cuda':
+        print('gpu is available')
         torch.cuda.empty_cache()
+
+    if torch.cuda.device_count() > 1:
+        print('multiple gpus are available')
+        model = DataParallel(model, device_ids=[0,1])
     model.to(device)
     criterion.to(device)
 
@@ -75,8 +81,8 @@ if __name__ == '__main__':
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
     sampler = BernoulliNegativeSampler(kg_train)
-    tr_dl = DataLoader(kg_train, batch_size=args.batch_size)
-    val_dl = DataLoader(kg_train, batch_size=args.batch_size)
+    tr_dl = DataLoader(kg_train, batch_size=args.batch_size) #, use_cuda='all')
+    val_dl = DataLoader(kg_valid, batch_size=args.batch_size) #, use_cuda='all')
 
     best_val_loss = 1e+10
     for epoch in tqdm(range(args.epochs), desc='epochs'):
@@ -85,6 +91,7 @@ if __name__ == '__main__':
         
         for step, batch in enumerate(tr_dl):
             h, t, r = map(lambda elm: elm.to(device), batch)
+            # h, t, r = batch[0], batch[1], batch[2]
             n_h, n_t = sampler.corrupt_batch(h, t, r)
             
             optimizer.zero_grad()

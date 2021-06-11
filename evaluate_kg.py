@@ -7,7 +7,7 @@ from torchkge.utils import MarginLoss, DataLoader
 import torchkge.models
 from torchkge.sampling import BernoulliNegativeSampler
 from torchkge.evaluation import LinkPredictionEvaluator, TripletClassificationEvaluator
-from utils import CheckpointManager, SummaryManager
+from utils import CheckpointManager, SummaryManager,DataParallel
 
 parser = argparse.ArgumentParser(description="Evaluating knowledge graph embedding using development database")
 parser.add_argument('--data_dir', default='data', help='Directory containing data')
@@ -53,15 +53,21 @@ if __name__ == '__main__':
         model = torchkge.models.DistMultModel(ent_dim, kg_test.n_ent, kg_test.n_rel)
     elif args.model == 'TransR':
         model = torchkge.models.TransRModel(ent_dim, rel_dim, kg_test.n_ent, kg_test.n_rel)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        print('gpu is available')
+        torch.cuda.empty_cache()
         
+    if torch.cuda.device_count() > 1:
+        print('multiple gpus are available')
+        model = DataParallel(model)
+    
     checkpoint_manager = CheckpointManager(restore_dir)
     ckpt = checkpoint_manager.load_checkpoint(f'best_{args.model}.tar')
     model.load_state_dict(ckpt['model_state_dict'])
     criterion = MarginLoss(margin)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == 'cuda':
-        torch.cuda.empty_cache()
     model.to(device)
     criterion.to(device)
 
