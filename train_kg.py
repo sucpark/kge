@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='Training knowledge graph using dev
 parser.add_argument('--data_dir', default='data', help='Directory containing data')
 parser.add_argument('--save_dir', default='experiment', help='Directory to save the experiment results')
 parser.add_argument('--data', default='wikidatasets')
-parser.add_argument('--model', default='TransR')
+parser.add_argument('--model', default='TransE')
 
 parser_for_kg_wiki = parser.add_argument_group(title='wiki')
 parser_for_kg_wiki.add_argument('--which', default='companies')
@@ -52,13 +52,15 @@ if __name__ == '__main__':
     with open(data_dir / 'kg_valid.pkl', mode='rb') as io:
         kg_valid = pickle.load(io)
 
-    assert args.model in ['TransE', 'TransR', 'DistMult'], "Invalid Knowledge Graph Embedding Model"
+    assert args.model in ['TransE', 'TransR', 'DistMult', 'TransD'], "Invalid Knowledge Graph Embedding Model"
     if args.model == 'TransE':
         model = torchkge.models.TransEModel(args.ent_dim, kg_train.n_ent, kg_train.n_rel, dissimilarity_type='L2')
     elif args.model == 'DistMult':
         model = torchkge.models.DistMultModel(args.ent_dim, kg_train.n_ent, kg_train.n_rel)
     elif args.model == 'TransR':
         model = torchkge.models.TransRModel(args.ent_dim, args.rel_dim, kg_train.n_ent, kg_train.n_rel)
+    elif args.model == 'TransD':
+        model = torchkge.models.TransDModel(args.ent_dim, args.rel_dim, kg_train.n_ent, kg_train.n_rel)
     
     criterion = MarginLoss(args.margin)
 
@@ -70,7 +72,7 @@ if __name__ == '__main__':
 
     if torch.cuda.device_count() > 1:
         print('multiple gpus are available')
-        model = DataParallel(model, device_ids=[0,1])
+        model = DataParallel(model, device_ids=[0, 1])
     model.to(device)
     criterion.to(device)
 
@@ -81,8 +83,8 @@ if __name__ == '__main__':
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-5)
     sampler = BernoulliNegativeSampler(kg_train)
-    tr_dl = DataLoader(kg_train, batch_size=args.batch_size) #, use_cuda='all')
-    val_dl = DataLoader(kg_valid, batch_size=args.batch_size) #, use_cuda='all')
+    tr_dl = DataLoader(kg_train, batch_size=args.batch_size)
+    val_dl = DataLoader(kg_valid, batch_size=args.batch_size)
 
     best_val_loss = 1e+10
     for epoch in tqdm(range(args.epochs), desc='epochs'):
@@ -91,7 +93,6 @@ if __name__ == '__main__':
         
         for step, batch in enumerate(tr_dl):
             h, t, r = map(lambda elm: elm.to(device), batch)
-            # h, t, r = batch[0], batch[1], batch[2]
             n_h, n_t = sampler.corrupt_batch(h, t, r)
             
             optimizer.zero_grad()

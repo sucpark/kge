@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description="Evaluating knowledge graph embeddi
 parser.add_argument('--data_dir', default='data', help='Directory containing data')
 parser.add_argument('--restore_dir', default='experiment', help='Directory to restore the experiment results')
 parser.add_argument('--data', default='wikidatasets')
-parser.add_argument('--model', default='TransR')
+parser.add_argument('--model', default='TransE')
 
 parser_for_kg_wiki = parser.add_argument_group(title='wiki')
 parser_for_kg_wiki.add_argument('--which', default='companies')
@@ -46,13 +46,15 @@ if __name__ == '__main__':
         kg_valid = pickle.load(io)
     
     # restore model
-    assert args.model in ['TransE', 'TransR', 'DistMult'], "Invalid Knowledge Graph Embedding Model"
+    assert args.model in ['TransE', 'TransR', 'DistMult', 'TransD'], "Invalid Knowledge Graph Embedding Model"
     if args.model == 'TransE':
         model = torchkge.models.TransEModel(ent_dim, kg_test.n_ent, kg_test.n_rel, dissimilarity_type='L2')
     elif args.model == 'DistMult':
         model = torchkge.models.DistMultModel(ent_dim, kg_test.n_ent, kg_test.n_rel)
     elif args.model == 'TransR':
         model = torchkge.models.TransRModel(ent_dim, rel_dim, kg_test.n_ent, kg_test.n_rel)
+    elif args.model == 'TransD':
+        model = torchkge.models.TransDModel(ent_dim, rel_dim, kg_test.n_ent, kg_test.n_rel)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
