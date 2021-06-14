@@ -18,7 +18,7 @@ parser.add_argument('--model', default='TransE')
 
 parser_for_kg_wiki = parser.add_argument_group(title='wiki')
 parser_for_kg_wiki.add_argument('--which', default='companies')
-parser_for_kg_wiki.add_argument('--limit', default=0)
+parser_for_kg_wiki.add_argument('--limit', default=0, type=int)
 
 parser_for_training = parser.add_argument_group(title='Training')
 parser_for_training.add_argument('--epochs', default=10, type=int, help='Epochs for training')
@@ -28,6 +28,7 @@ parser_for_training.add_argument('--ent_dim', default=20, type=int, help='Embedd
 parser_for_training.add_argument('--rel_dim', default=20, type=int, help='Embedding dimension for Relation')
 parser_for_training.add_argument('--margin', default=0.5, type=float, help='Margin for margin ranking loss')
 parser_for_training.add_argument('--summary_step', default=2, type=int, help='Summary step for training')
+parser_for_training.add_argument('--gpu', default=None, type=list, help='Set GPU for training')
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -72,7 +73,10 @@ if __name__ == '__main__':
 
     if torch.cuda.device_count() > 1:
         print('multiple gpus are available')
-        model = DataParallel(model, device_ids=[0, 1])
+        if args.gpu is not None:
+            model = DataParallel(model, device_ids=args.gpu)
+        else:
+            model = DataParallel(model)
     model.to(device)
     criterion.to(device)
 
