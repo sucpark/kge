@@ -20,6 +20,7 @@ parser_for_kg_wiki.add_argument('--which', default='companies')
 
 parser_for_evaluating = parser.add_argument_group(title='Evaluating')
 parser_for_evaluating.add_argument('--batch_size', default=64, type=int, help='Batch size for evaluating')
+parser_for_evaluating.add_argument('--gpu', default=None, type=list, help='Set GPU for training')
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -63,7 +64,10 @@ if __name__ == '__main__':
         
     if torch.cuda.device_count() > 1:
         print('multiple gpus are available')
-        model = DataParallel(model)
+        if args.gpu is not None:
+            model = DataParallel(model, device_ids=args.gpu)
+        else:
+            model = DataParallel(model)
     
     checkpoint_manager = CheckpointManager(restore_dir)
     ckpt = checkpoint_manager.load_checkpoint(f'best_{args.model}.tar')
