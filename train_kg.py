@@ -28,7 +28,7 @@ parser_for_training.add_argument('--ent_dim', default=20, type=int, help='Embedd
 parser_for_training.add_argument('--rel_dim', default=20, type=int, help='Embedding dimension for Relation')
 parser_for_training.add_argument('--margin', default=0.5, type=float, help='Margin for margin ranking loss')
 parser_for_training.add_argument('--summary_step', default=2, type=int, help='Summary step for training')
-parser_for_training.add_argument('--gpu', default=None, type=list, help='Set GPU for training')
+parser_for_training.add_argument('--gpu', default=None, type=str, help='Set GPU for training')
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     
     criterion = MarginLoss(args.margin)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
     
     if device.type == 'cuda':
         print('gpu is available')
@@ -74,7 +74,8 @@ if __name__ == '__main__':
     if torch.cuda.device_count() > 1:
         print('multiple gpus are available')
         if args.gpu is not None:
-            model = DataParallel(model, device_ids=args.gpu)
+            device_ids = [int(x) for x in args.gpu]
+            model = DataParallel(model, device_ids=device_ids)
         else:
             model = DataParallel(model)
     model.to(device)

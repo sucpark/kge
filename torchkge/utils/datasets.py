@@ -306,6 +306,7 @@ def load_wikidatasets(which, limit_=0, data_home=None):
     data_home = data_home + '/WikiDataSets'
     data_path = data_home + '/' + which
     if not exists(data_path):
+        print(f"Downloading WikiDataSets/{which}")
         makedirs(data_path, exist_ok=True)
         urlretrieve("https://graphs.telecom-paristech.fr/data/WikiDataSets/{}.tar.gz".format(which),
                     data_home + '/{}.tar.gz'.format(which))
@@ -315,6 +316,7 @@ def load_wikidatasets(which, limit_=0, data_home=None):
         remove(data_home + '/{}.tar.gz'.format(which))
 
     # add entity2idx, relation2idx
+    print("Creating knowledge graph data structure")
     df = read_csv(data_path + '/edges.tsv', sep='\t', names=['from', 'to', 'rel'], skiprows=[0])
     entities = read_csv(data_path + '/entities.tsv', sep='\t', names=['id', 'wid', 'label'], skiprows=[0])
     relations = read_csv(data_path + '/relations.tsv', sep='\t', names=['id', 'wid', 'label'], skiprows=[0])
