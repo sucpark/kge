@@ -65,7 +65,7 @@ if __name__ == '__main__':
     
     criterion = MarginLoss(args.margin)
 
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     if device.type == 'cuda':
         print('gpu is available')
