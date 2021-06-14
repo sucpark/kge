@@ -13,7 +13,7 @@ parser.add_argument('--share', default=0.8, type=float, help='The proportion of 
 
 parser_for_kg_wiki = parser.add_argument_group(title='wiki')
 parser_for_kg_wiki.add_argument('--which', default='companies')
-parser_for_kg_wiki.add_argument('--limit', default=0)
+parser_for_kg_wiki.add_argument('--limit', default=0, type=int)
 
 if __name__ == '__main__':
     args = parser.parse_args()
