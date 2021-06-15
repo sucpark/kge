@@ -42,7 +42,7 @@ if __name__ == '__main__':
     experiment_summary = dict(**experiment_summary)
     experiment_summary = {'Experiment Summary': experiment_summary}
     
-    assert args.data in ['wikidatasets', 'fb15k'], "Invalid knowledge graph dataset"
+    assert args.data in ['wikidatasets', 'fb15k', 'wn18', 'yago3-10'], "Invalid knowledge graph dataset"
     if args.data == 'wikidatasets':
         data_dir = data_dir / args.which
         save_dir = save_dir / args.which
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     with open(data_dir / 'kg_valid.pkl', mode='rb') as io:
         kg_valid = pickle.load(io)
 
-    assert args.model in ['TransE', 'TransR', 'DistMult', 'TransD'], "Invalid Knowledge Graph Embedding Model"
+    assert args.model in ['TransE', 'TransR', 'DistMult', 'TransD', 'TorusE'], "Invalid Knowledge Graph Embedding Model"
     if args.model == 'TransE':
         model = torchkge.models.TransEModel(args.ent_dim, kg_train.n_ent, kg_train.n_rel, dissimilarity_type='L2')
     elif args.model == 'DistMult':
@@ -62,10 +62,12 @@ if __name__ == '__main__':
         model = torchkge.models.TransRModel(args.ent_dim, args.rel_dim, kg_train.n_ent, kg_train.n_rel)
     elif args.model == 'TransD':
         model = torchkge.models.TransDModel(args.ent_dim, args.rel_dim, kg_train.n_ent, kg_train.n_rel)
-    
+    elif args.model == 'TorusE':
+        model = torchkge.models.TorusEModel(args.ent_dim, kg_train.n_ent, kg_train.n_rel, 'torus_L2')
+
     criterion = MarginLoss(args.margin)
 
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     if device.type == 'cuda':
         print('gpu is available')

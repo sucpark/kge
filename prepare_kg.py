@@ -20,17 +20,18 @@ if __name__ == '__main__':
     data_dir = Path(args.data_dir)
     save_dir = Path(args.save_dir) / args.data
 
-    assert args.data in ['wikidatasets', 'fb15k'], "Invalid knowledge graph dataset"
+    assert args.data in ['wikidatasets', 'fb15k', 'wn18', 'yago3-10'], "Invalid knowledge graph dataset"
     if args.data == 'wikidatasets':
-        kg = torchkge_ds.load_wikidatasets(which=args.which,
-                                           limit_=args.limit,
-                                           data_home=args.data_dir)
+        kg = torchkge_ds.load_wikidatasets(which=args.which, limit_=args.limit, data_home=args.data_dir)
         save_dir = save_dir / args.which
     elif args.data == 'fb15k':
         kg = torchkge_ds.load_fb15k(data_home=args.data_dir)
+    elif args.data == 'wn18':
+        kg = torchkge_ds.load_wn18(data_home=args.data_dir)
+    elif args.data == 'yago3-10':
+        kg = torchkge_ds.load_yago3_10(data_home=args.data_dir)
 
     kg_train, kg_valid, kg_test = kg.split_kg(share=args.share, validation=True)
-
     if not os.path.exists(save_dir):
         os.makedirs(save_dir, exist_ok=True)
 

@@ -3,8 +3,7 @@
 Copyright TorchKGE developers
 @author: Armand Boschin <aboschin@enst.fr>
 
-This module's code is freely adapted from Scikit-Learn's
-sklearn.datasets.base.py code.
+This module's code is freely adapted from Scikit-Learn's sklearn.datasets.base.py code.
 """
 
 import tarfile
@@ -16,7 +15,6 @@ from pandas import concat, DataFrame, merge, read_csv
 from urllib.request import urlretrieve
 
 from torchkge.data_structures import KnowledgeGraph
-
 from torchkge.utils import get_data_home
 
 
@@ -172,12 +170,14 @@ def load_wn18(data_home=None):
     data_path = data_home + '/WN18'
     if not exists(data_path):
         makedirs(data_path, exist_ok=True)
+        print('Downloading WN18 dataset')
         urlretrieve("https://graphs.telecom-paristech.fr/data/torchkge/kgs/WN18.zip",
                     data_home + '/WN18.zip')
         with zipfile.ZipFile(data_home + '/WN18.zip', 'r') as zip_ref:
             zip_ref.extractall(data_home)
         remove(data_home + '/WN18.zip')
 
+    print('Creating Knowledge Graph Data Structure using WN18 dataset')
     df1 = read_csv(data_path + '/wordnet-mlj12-train.txt',
                    sep='\t', header=None, names=['from', 'rel', 'to'])
     df2 = read_csv(data_path + '/wordnet-mlj12-valid.txt',
@@ -187,7 +187,7 @@ def load_wn18(data_home=None):
     df = concat([df1, df2, df3])
     kg = KnowledgeGraph(df)
 
-    return kg.split_kg(sizes=(len(df1), len(df2), len(df3)))
+    return kg
 
 
 def load_wn18rr(data_home=None):
@@ -256,12 +256,14 @@ def load_yago3_10(data_home=None):
     data_path = data_home + '/YAGO3-10'
     if not exists(data_path):
         makedirs(data_path, exist_ok=True)
+        print('Downloading Yago3-10 datasets')
         urlretrieve("https://graphs.telecom-paristech.fr/data/torchkge/kgs/YAGO3-10.zip",
                     data_home + '/YAGO3-10.zip')
         with zipfile.ZipFile(data_home + '/YAGO3-10.zip', 'r') as zip_ref:
             zip_ref.extractall(data_home)
         remove(data_home + '/YAGO3-10.zip')
 
+    print('Creating Knowledge Graph Data Structure using Yago3-10 dataset')
     df1 = read_csv(data_path + '/train.txt',
                    sep='\t', header=None, names=['from', 'rel', 'to'])
     df2 = read_csv(data_path + '/valid.txt',
@@ -271,7 +273,7 @@ def load_yago3_10(data_home=None):
     df = concat([df1, df2, df3])
     kg = KnowledgeGraph(df)
 
-    return kg.split_kg(sizes=(len(df1), len(df2), len(df3)))
+    return kg
 
 
 def load_wikidatasets(which, limit_=0, data_home=None):
@@ -316,7 +318,7 @@ def load_wikidatasets(which, limit_=0, data_home=None):
         remove(data_home + '/{}.tar.gz'.format(which))
 
     # add entity2idx, relation2idx
-    print("Creating knowledge graph data structure")
+    print(f"Creating Knowledge Graph Data Structure using WikiDataSets/{which}")
     df = read_csv(data_path + '/edges.tsv', sep='\t', names=['from', 'to', 'rel'], skiprows=[0])
     entities = read_csv(data_path + '/entities.tsv', sep='\t', names=['id', 'wid', 'label'], skiprows=[0])
     relations = read_csv(data_path + '/relations.tsv', sep='\t', names=['id', 'wid', 'label'], skiprows=[0])
