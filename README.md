@@ -1,13 +1,13 @@
 # kge
 
 ### Project Overview
-Based on torchkge, develop the pipeline of knowledge graph embedding
+Based on torchkge, develop the pipeline for knwoledge graph embedding
 
 
 ### Data Overview
-Freebase
+Freebase - Fb13, FB15k
 
-Wikidatasets
+Wikidatasets - companies, countries
 
 Yago
   
